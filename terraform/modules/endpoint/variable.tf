@@ -8,3 +8,7 @@ variable "private_rt" {
 variable "vpc_cidr" {
   type = string
 }
+
+variable "private_subnet_ids" {
+  type = list(string)
+}

@@ -36,6 +36,7 @@ module "endpoint" {
   vpc_id        = module.vpc.vpc_id
   private_rt    = module.vpc.private_rt  
   vpc_cidr      = module.vpc.vpc_cidr
+  private_subnet_ids = module.vpc.private_subnet_ids
 }
 
 module "ecr" {
