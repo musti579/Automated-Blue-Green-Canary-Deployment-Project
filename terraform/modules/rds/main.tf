@@ -3,18 +3,6 @@ resource "random_password" "db" {
   special = false
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 # using private subnets so the db is never directly reachable from the internet
 resource "aws_db_subnet_group" "rds_subnet" {
   name       = "rds-subnet-group"
@@ -46,6 +34,7 @@ resource "aws_db_instance" "rds_postgres" {
 
 resource "aws_secretsmanager_secret" "database_url" {
   name = "ecs2/database-url"
+  recovery_window_in_days = 0
 }
 
 resource "aws_secretsmanager_secret_version" "database_url" {
