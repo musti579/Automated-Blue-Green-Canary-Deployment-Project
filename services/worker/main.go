@@ -11,10 +11,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	_ "github.com/lib/pq"
 )
 
 var db *sql.DB
+var sqsClient *sqs.Client
 
 type ClickEvent struct {
 	ShortCode string `json:"short_code"`
@@ -53,6 +57,12 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	awsCfg, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		log.Fatalf("Failed to load AWS config: %v", err)
+	}
+	sqsClient = sqs.NewFromConfig(awsCfg)
 
 	// Health check endpoint
 	go func() {
@@ -136,11 +146,30 @@ func pollSQS(ctx context.Context, queueURL string) {
 	}
 }
 
-func receiveSQSMessages(queueURL string) []string {
-	// Students implement with AWS SDK SQS ReceiveMessage
-	// Use long polling: WaitTimeSeconds = 20
-	// MaxNumberOfMessages = 10
-	return nil
+type sqsMessage struct {
+	Body          string
+	ReceiptHandle string
+}
+
+func receiveSQSMessages(queueURL string) []sqsMessage {
+	result, err := sqsClient.ReceiveMessage(context.Background(), &sqs.ReceiveMessageInput{
+		QueueUrl:            aws.String(queueURL),
+		MaxNumberOfMessages: 10,
+		WaitTimeSeconds:     20,
+	})
+	if err != nil {
+		log.Printf("Failed to receive messages: %v", err)
+		return nil
+	}
+
+	var messages []sqsMessage
+	for _, msg := range result.Messages {
+		messages = append(messages, sqsMessage{
+			Body:          aws.ToString(msg.Body),
+			ReceiptHandle: aws.ToString(msg.ReceiptHandle),
+		})
+	}
+	return messages
 }
 
 func processClickEvent(raw string) error {
