@@ -25,6 +25,9 @@ type ClickEvent struct {
 }
 
 func main() {
+	log.Println("worker container started")
+
+
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		log.Fatal("DATABASE_URL is required")
