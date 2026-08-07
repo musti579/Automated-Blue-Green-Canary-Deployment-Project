@@ -132,17 +132,27 @@ func pollSQS(ctx context.Context, queueURL string) {
 		default:
 			messages := receiveSQSMessages(queueURL)
 			for _, msg := range messages {
-				if err := processClickEvent(msg); err != nil {
+				if err := processClickEvent(msg.Body); err != nil {
 					log.Printf("Failed to process event: %v", err)
 					continue
 				}
-				// Delete message from queue after successful processing
-				log.Printf("Processed click event: %s", msg)
+				deleteSQSMessage(queueURL, msg.ReceiptHandle)
+				log.Printf("Processed click event: %s", msg.Body)
 			}
 			if len(messages) == 0 {
 				time.Sleep(5 * time.Second)
 			}
 		}
+	}
+}
+
+func deleteSQSMessage(queueURL, receiptHandle string) {
+	_, err := sqsClient.DeleteMessage(context.Background(), &sqs.DeleteMessageInput{
+		QueueUrl:      aws.String(queueURL),
+		ReceiptHandle: aws.String(receiptHandle),
+	})
+	if err != nil {
+		log.Printf("Failed to delete message: %v", err)
 	}
 }
 
@@ -152,6 +162,8 @@ type sqsMessage struct {
 }
 
 func receiveSQSMessages(queueURL string) []sqsMessage {
+	log.Printf("Attempting to receive messages from: %s", queueURL)
+
 	result, err := sqsClient.ReceiveMessage(context.Background(), &sqs.ReceiveMessageInput{
 		QueueUrl:            aws.String(queueURL),
 		MaxNumberOfMessages: 10,
@@ -161,6 +173,8 @@ func receiveSQSMessages(queueURL string) []sqsMessage {
 		log.Printf("Failed to receive messages: %v", err)
 		return nil
 	}
+
+	log.Printf("Receive call succeeded, got %d messages", len(result.Messages))
 
 	var messages []sqsMessage
 	for _, msg := range result.Messages {
