@@ -77,3 +77,7 @@ module "codedeploy" {
   dashboard_blue_tg_name = module.alb.dashboard_blue_tg_name
   dashboard_green_tg_name = module.alb.dashboard_green_tg_name
 }
+
+module "frontend" {
+  source = "./frontend"
+}

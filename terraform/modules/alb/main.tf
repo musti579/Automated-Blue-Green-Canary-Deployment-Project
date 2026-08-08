@@ -167,6 +167,10 @@ resource "aws_lb_listener" "api_listener" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.api_blue.arn
   }
+
+  lifecycle {
+    ignore_changes = [default_action]
+  }
 } 
 
 
