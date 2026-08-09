@@ -81,12 +81,18 @@ module "codedeploy" {
 
 module "frontend" {
   source = "./frontend"
-
-
+  frontend_certificate_arn = module.acm.frontend_certificate_arn
 }
 
 module "acm" {
-  source = "./modules/acm"
+  source       = "./modules/acm"
   alb_dns_name = module.alb.dns_name
   alb_zone_id  = module.alb.zone_id
+  cloudfront_domain_name   = module.frontend.cloudfront_domain_name
+  cloudfront_hosted_zone_id = "Z2FDTNDATAQYW2"
+
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
+  }
 }

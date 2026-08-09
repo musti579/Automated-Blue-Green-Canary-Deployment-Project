@@ -1,3 +1,8 @@
+# Accepts the validated cert ARN from the acm module, needed to serve urlshortening.net over HTTPS
+variable "frontend_certificate_arn" {
+  type = string
+}
+
 resource "aws_s3_bucket" "frontend" {
   bucket = "ecs2-frontend-${data.aws_caller_identity.current.account_id}"
 }
@@ -23,6 +28,9 @@ resource "aws_cloudfront_origin_access_control" "frontend" {
 resource "aws_cloudfront_distribution" "frontend" {
   enabled             = true
   default_root_object = "index.html"
+
+  # Lets CloudFront accept requests for urlshortening.net, not just the default cloudfront.net URL
+  aliases = ["urlshortening.net"]
 
   origin {
     domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
@@ -50,8 +58,11 @@ resource "aws_cloudfront_distribution" "frontend" {
     }
   }
 
+  # Uses our own validated cert so the custom domain can be served over HTTPS
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn      = var.frontend_certificate_arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
   }
 }
 
@@ -83,4 +94,8 @@ output "cloudfront_url" {
 
 output "bucket_name" {
   value = aws_s3_bucket.frontend.bucket
+}
+
+output "cloudfront_domain_name" {
+  value = aws_cloudfront_distribution.frontend.domain_name
 }

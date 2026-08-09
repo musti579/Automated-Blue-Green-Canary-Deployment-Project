@@ -51,12 +51,6 @@ resource "aws_route53_record" "api" {
 
 # --- Frontend domain (points urlshortening.net at CloudFront) ---
 
-# CloudFront certs must be requested in us-east-1 regardless of where everything else lives
-provider "aws" {
-  alias  = "us_east_1"
-  region = "us-east-1"
-}
-
 # Certificate for the frontend's bare domain, must be in us-east-1 for CloudFront to use it
 resource "aws_acm_certificate" "frontend_cert" {
   provider          = aws.us_east_1
@@ -87,7 +81,7 @@ resource "aws_route53_record" "frontend_cert_validation" {
 
 # Waits for the frontend certificate to be fully validated
 resource "aws_acm_certificate_validation" "frontend_cert" {
-  provider                = aws.us_east_1
+  provider                 = aws.us_east_1
   certificate_arn          = aws_acm_certificate.frontend_cert.arn
   validation_record_fqdns  = [for record in aws_route53_record.frontend_cert_validation : record.fqdn]
 }
@@ -95,4 +89,17 @@ resource "aws_acm_certificate_validation" "frontend_cert" {
 # Exposes the validated frontend cert's ARN so the frontend module's CloudFront distribution can use it
 output "frontend_certificate_arn" {
   value = aws_acm_certificate_validation.frontend_cert.certificate_arn
+}
+
+# Points urlshortening.net at the CloudFront distribution
+resource "aws_route53_record" "frontend" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = "urlshortening.net"
+  type    = "A"
+
+  alias {
+    name                   = var.cloudfront_domain_name
+    zone_id                = var.cloudfront_hosted_zone_id
+    evaluate_target_health = false
+  }
 }
