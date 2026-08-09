@@ -157,11 +157,29 @@ resource "aws_lb_target_group" "dashboard_green" {
   }
 }
 
-  # api listener listens for http request and then forwards it to api blue
+# Redirects all HTTP traffic on port 80 to HTTPS, no longer forwards to any target group
 resource "aws_lb_listener" "api_listener" {
   load_balancer_arn = aws_lb.alb.arn
   port              = 80
   protocol          = "HTTP"
+
+  default_action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+}
+# HTTPS listener on port 443, serves traffic using the validated ACM cert
+resource "aws_lb_listener" "api_listener_https" {
+  load_balancer_arn = aws_lb.alb.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = module.acm.certificate_arn
 
   default_action {
     type             = "forward"
@@ -171,7 +189,7 @@ resource "aws_lb_listener" "api_listener" {
   lifecycle {
     ignore_changes = [default_action]
   }
-} 
+}
 
 
 # listener rule given listens to any of the condition if meet then traffic is sent to dashboard blue

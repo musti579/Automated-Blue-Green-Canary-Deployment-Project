@@ -29,3 +29,8 @@ resource "aws_route53_record" "cert_validation" {
   ttl     = 60
 }
 
+# Waits until ACM confirms the certificate is fully validated
+resource "aws_acm_certificate_validation" "api_cert" {
+  certificate_arn         = aws_acm_certificate.api_cert.arn
+  validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
+}
