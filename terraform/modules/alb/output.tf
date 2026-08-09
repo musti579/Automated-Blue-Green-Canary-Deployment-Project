@@ -30,3 +30,11 @@ output "api_blue_tg_arn" {
 output "dashboard_blue_tg_arn" {
   value = aws_lb_target_group.dashboard_blue.arn
 }
+
+output "dns_name" {
+  value = aws_lb.alb.dns_name
+}
+
+output "zone_id" {
+  value = aws_lb.alb.zone_id
+}

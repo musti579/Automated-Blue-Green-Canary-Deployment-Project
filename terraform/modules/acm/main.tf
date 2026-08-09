@@ -34,3 +34,21 @@ resource "aws_acm_certificate_validation" "api_cert" {
   certificate_arn         = aws_acm_certificate.api_cert.arn
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
+
+# Looks up the existing hosted zone for urlshortening.net
+data "aws_route53_zone" "main" {
+  name = "urlshortening.net"
+}
+
+# Points api.urlshortening.net at the ALB using an ALIAS record
+resource "aws_route53_record" "api" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = "api.urlshortening.net"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.alb.dns_name
+    zone_id                = aws_lb.alb.zone_id
+    evaluate_target_health = true
+  }
+}

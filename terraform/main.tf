@@ -87,4 +87,6 @@ module "frontend" {
 
 module "acm" {
   source = "./modules/acm"
+  alb_dns_name = module.alb.dns_name
+  alb_zone_id  = module.alb.zone_id
 }
