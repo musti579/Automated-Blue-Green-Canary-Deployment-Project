@@ -1,5 +1,6 @@
+# CodeDeploy needs this to know which listener to shift blue/green traffic on
 output "listener_arn" {
-  value = aws_lb_listener.api_listener.arn
+  value = aws_lb_listener.api_listener_https.arn
 }
 
 output "api_blue_tg_name" {
