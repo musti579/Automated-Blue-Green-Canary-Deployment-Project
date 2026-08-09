@@ -8,10 +8,6 @@ resource "aws_acm_certificate" "api_cert" {
   }
 }
 
-# Looks up the existing Route 53 hosted zone for urlshortening.net
-data "aws_route53_zone" "main" {
-  name = "urlshortening.net"
-}
 
 # Creates the DNS record ACM needs to verify we own the domain
 resource "aws_route53_record" "cert_validation" {
@@ -35,7 +31,7 @@ resource "aws_acm_certificate_validation" "api_cert" {
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
 
-# Looks up the existing hosted zone for urlshortening.net
+# Looks up the existing Route 53 hosted zone for urlshortening.net
 data "aws_route53_zone" "main" {
   name = "urlshortening.net"
 }
