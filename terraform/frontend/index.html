@@ -186,47 +186,6 @@
 
   .error-msg.show { display: block; }
 
-  .settings {
-    margin-top: 28px;
-    padding-top: 20px;
-    border-top: 1px solid var(--line);
-  }
-
-  .settings summary {
-    font-family: 'IBM Plex Mono', 'Courier New', monospace;
-    font-size: 12px;
-    color: var(--paper-dim);
-    cursor: pointer;
-    letter-spacing: 0.04em;
-  }
-
-  .settings summary:hover { color: var(--paper); }
-
-  .settings-body {
-    margin-top: 12px;
-    display: flex;
-    gap: 8px;
-  }
-
-  .settings-body input {
-    flex: 1;
-    background: var(--ink);
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    color: var(--paper-dim);
-    font-family: 'IBM Plex Mono', 'Courier New', monospace;
-    font-size: 12px;
-    padding: 9px 10px;
-    outline: none;
-  }
-
-  .settings-body input:focus { border-color: var(--cobalt); color: var(--paper); }
-
-  .settings-body button {
-    padding: 9px 14px;
-    font-size: 12px;
-  }
-
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; animation: none !important; }
   }
@@ -257,18 +216,11 @@
     </div>
 
     <div class="error-msg" id="errorMsg"></div>
-
-    <details class="settings">
-      <summary>API endpoint</summary>
-      <div class="settings-body">
-        <input type="text" id="apiBase" placeholder="http://your-alb-dns-name.elb.amazonaws.com" />
-      </div>
-    </details>
   </div>
 </div>
 
 <script>
-  const DEFAULT_API = 'https://api.urlshortening.net';
+  const API_BASE = 'https://api.urlshortening.net';
 
   const urlInput = document.getElementById('urlInput');
   const shortenBtn = document.getElementById('shortenBtn');
@@ -276,9 +228,6 @@
   const shortTag = document.getElementById('shortTag');
   const copyBtn = document.getElementById('copyBtn');
   const errorMsg = document.getElementById('errorMsg');
-  const apiBase = document.getElementById('apiBase');
-
-  apiBase.value = DEFAULT_API;
 
   function showError(msg) {
     errorMsg.textContent = msg;
@@ -303,11 +252,7 @@
       return;
     }
 
-    const base = apiBase.value.trim().replace(/\/$/, '');
-    if (!base) {
-      showError('Set the API endpoint below first.');
-      return;
-    }
+    const base = API_BASE;
 
     clearError();
     shortenBtn.disabled = true;
@@ -332,7 +277,7 @@
       shortTag.textContent = fullShort;
       result.classList.add('show');
     } catch (err) {
-      showError(`Couldn't reach the shortener — ${err.message}. Check the API endpoint is correct and the ALB is running.`);
+      showError(`Couldn't reach the shortener — ${err.message}. Check the ALB is running.`);
     } finally {
       shortenBtn.disabled = false;
       shortenBtn.textContent = 'Shorten';
