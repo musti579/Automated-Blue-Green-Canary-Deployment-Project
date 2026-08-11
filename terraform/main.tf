@@ -96,3 +96,7 @@ module "acm" {
     aws.us_east_1 = aws.us_east_1
   }
 }
+
+module "oidc" {
+  source = "./modules/oidc"
+}
