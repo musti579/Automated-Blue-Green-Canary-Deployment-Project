@@ -36,8 +36,8 @@ jobs:
       - name: Build image
         run: |
           docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} ./app --platform linux/amd64
-
       - name: Scan with Grype
+        id: grype-scan
         uses: anchore/scan-action@v4
         with:
           image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
@@ -47,9 +47,9 @@ jobs:
 
       - name: Upload scan results
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: results.sarif
+          sarif_file: ${{ steps.grype-scan.outputs.sarif }}
 
       - name: Push to ECR
         run: |
