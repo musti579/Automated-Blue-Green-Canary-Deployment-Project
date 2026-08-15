@@ -45,6 +45,11 @@ jobs:
           severity-cutoff: critical
           output-format: sarif
 
+      - name: Debug SARIF output
+        run: |
+          echo "SARIF path from action: ${{ steps.grype-scan.outputs.sarif }}"
+          cat ${{ steps.grype-scan.outputs.sarif }} || echo "FILE NOT FOUND OR EMPTY"
+
       - name: Upload scan results
         if: always()
         uses: github/codeql-action/upload-sarif@v4
