@@ -36,7 +36,7 @@ jobs:
       - name: Build API image
         run: |
           IMAGE="${{ steps.ecr.outputs.registry }}/ecs2-api"
-          docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" ./app --platform linux/amd64
+          docker build -t "$IMAGE:${{ github.sha }}" ./app --platform linux/amd64
 
       - name: Scan API image
         run: |
@@ -46,13 +46,12 @@ jobs:
         run: |
           IMAGE="${{ steps.ecr.outputs.registry }}/ecs2-api"
           docker push "$IMAGE:${{ github.sha }}"
-          docker push "$IMAGE:latest"
 
-      # --- Dashboard ---
+  # --- Dashboard ---
       - name: Build Dashboard image
         run: |
           IMAGE="${{ steps.ecr.outputs.registry }}/ecs2-dashboard"
-          docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" ./services/dashboard --platform linux/amd64
+          docker build -t "$IMAGE:${{ github.sha }}" ./services/dashboard --platform linux/amd64
 
       - name: Scan Dashboard image
         run: |
@@ -62,13 +61,12 @@ jobs:
         run: |
           IMAGE="${{ steps.ecr.outputs.registry }}/ecs2-dashboard"
           docker push "$IMAGE:${{ github.sha }}"
-          docker push "$IMAGE:latest"
 
       # --- Worker ---
       - name: Build Worker image
         run: |
           IMAGE="${{ steps.ecr.outputs.registry }}/ecs2-worker"
-          docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" ./services/worker --platform linux/amd64
+          docker build -t "$IMAGE:${{ github.sha }}" ./services/worker --platform linux/amd64
 
       - name: Scan Worker image
         run: |
@@ -78,4 +76,3 @@ jobs:
         run: |
           IMAGE="${{ steps.ecr.outputs.registry }}/ecs2-worker"
           docker push "$IMAGE:${{ github.sha }}"
-          docker push "$IMAGE:latest"
