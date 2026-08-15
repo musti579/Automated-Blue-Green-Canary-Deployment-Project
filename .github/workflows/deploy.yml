@@ -1,6 +1,10 @@
-name: ECS Api, Dashboard and Worker
+name: Deploy to ECS
 on:
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy (commit SHA from build pipeline)'
+        required: true
 permissions:
   id-token: write
   contents: read
@@ -17,38 +21,87 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           role-session-name: ecs-deploy
 
+      - name: Get ECR registry
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ---------------- API ----------------
+      - name: Get current API task definition
+        run: |
+          aws ecs describe-task-definition --task-definition ecs2-api \
+            --query taskDefinition --region ${{ env.AWS_REGION }} > api-task-def.json
+      - name: Render new API task definition
+        id: render-api
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: api-task-def.json
+          container-name: api
+          image: ${{ steps.ecr.outputs.registry }}/ecs2-api:${{ github.event.inputs.image_tag }}
+      - name: Register new API task definition
+        id: register-api
+        run: |
+          ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://${{ steps.render-api.outputs.task-definition }} \
+            --region ${{ env.AWS_REGION }} --query taskDefinition.taskDefinitionArn --output text)
+          echo "arn=$ARN" >> $GITHUB_OUTPUT
       - name: Deploy API via CodeDeploy
         run: |
-          API_ARN=$(aws ecs describe-task-definition \
-            --task-definition ecs2-api \
-            --query 'taskDefinition.taskDefinitionArn' \
-            --output text)
           aws deploy create-deployment \
             --application-name ecs2-api \
             --deployment-group-name ecs2-api-dg \
             --region ${{ env.AWS_REGION }} \
-            --revision '{"revisionType":"AppSpecContent","appSpecContent":{"content":"{\"version\":1,\"Resources\":[{\"TargetService\":{\"Type\":\"AWS::ECS::Service\",\"Properties\":{\"TaskDefinition\":\"'"$API_ARN"'\",\"LoadBalancerInfo\":{\"ContainerName\":\"api\",\"ContainerPort\":8080}}}}]}"}}'
+            --revision '{"revisionType":"AppSpecContent","appSpecContent":{"content":"{\"version\":1,\"Resources\":[{\"TargetService\":{\"Type\":\"AWS::ECS::Service\",\"Properties\":{\"TaskDefinition\":\"'"${{ steps.register-api.outputs.arn }}"'\",\"LoadBalancerInfo\":{\"ContainerName\":\"api\",\"ContainerPort\":8080}}}}]}"}}'
 
+      # ---------------- Dashboard ----------------
+      - name: Get current Dashboard task definition
+        run: |
+          aws ecs describe-task-definition --task-definition ecs2-dashboard \
+            --query taskDefinition --region ${{ env.AWS_REGION }} > dashboard-task-def.json
+      - name: Render new Dashboard task definition
+        id: render-dashboard
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: dashboard-task-def.json
+          container-name: dashboard
+          image: ${{ steps.ecr.outputs.registry }}/ecs2-dashboard:${{ github.event.inputs.image_tag }}
+      - name: Register new Dashboard task definition
+        id: register-dashboard
+        run: |
+          ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://${{ steps.render-dashboard.outputs.task-definition }} \
+            --region ${{ env.AWS_REGION }} --query taskDefinition.taskDefinitionArn --output text)
+          echo "arn=$ARN" >> $GITHUB_OUTPUT
       - name: Deploy Dashboard via CodeDeploy
         run: |
-          DASH_ARN=$(aws ecs describe-task-definition \
-            --task-definition ecs2-dashboard \
-            --query 'taskDefinition.taskDefinitionArn' \
-            --output text)
           aws deploy create-deployment \
             --application-name ecs2-dashboard \
             --deployment-group-name ecs2-dashboard-dg \
             --region ${{ env.AWS_REGION }} \
-            --revision '{"revisionType":"AppSpecContent","appSpecContent":{"content":"{\"version\":1,\"Resources\":[{\"TargetService\":{\"Type\":\"AWS::ECS::Service\",\"Properties\":{\"TaskDefinition\":\"'"$DASH_ARN"'\",\"LoadBalancerInfo\":{\"ContainerName\":\"dashboard\",\"ContainerPort\":8081}}}}]}"}}'
+            --revision '{"revisionType":"AppSpecContent","appSpecContent":{"content":"{\"version\":1,\"Resources\":[{\"TargetService\":{\"Type\":\"AWS::ECS::Service\",\"Properties\":{\"TaskDefinition\":\"'"${{ steps.register-dashboard.outputs.arn }}"'\",\"LoadBalancerInfo\":{\"ContainerName\":\"dashboard\",\"ContainerPort\":8081}}}}]}"}}'
 
+      # ---------------- Worker ----------------
+      - name: Get current Worker task definition
+        run: |
+          aws ecs describe-task-definition --task-definition ecs2-worker \
+            --query taskDefinition --region ${{ env.AWS_REGION }} > worker-task-def.json
+      - name: Render new Worker task definition
+        id: render-worker
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: worker-task-def.json
+          container-name: worker
+          image: ${{ steps.ecr.outputs.registry }}/ecs2-worker:${{ github.event.inputs.image_tag }}
+      - name: Register new Worker task definition
+        id: register-worker
+        run: |
+          ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://${{ steps.render-worker.outputs.task-definition }} \
+            --region ${{ env.AWS_REGION }} --query taskDefinition.taskDefinitionArn --output text)
+          echo "arn=$ARN" >> $GITHUB_OUTPUT
       - name: Deploy Worker via ECS
         run: |
-          WORKER_ARN=$(aws ecs describe-task-definition \
-            --task-definition ecs2-worker \
-            --query 'taskDefinition.taskDefinitionArn' \
-            --output text)
           aws ecs update-service \
             --cluster ecs2-cluster \
             --service ecs2-worker \
-            --task-definition $WORKER_ARN \
+            --task-definition ${{ steps.register-worker.outputs.arn }} \
             --region ${{ env.AWS_REGION }}
