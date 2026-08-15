@@ -124,6 +124,18 @@ resource "aws_iam_role_policy" "terraform_pipeline" {
           "logs:*"
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "SecretsManager"
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:CreateSecret", "secretsmanager:DeleteSecret",
+          "secretsmanager:DescribeSecret", "secretsmanager:GetSecretValue",
+          "secretsmanager:PutSecretValue", "secretsmanager:UpdateSecret",
+          "secretsmanager:TagResource", "secretsmanager:UntagResource",
+          "secretsmanager:GetResourcePolicy", "secretsmanager:PutResourcePolicy"
+        ]
+        Resource = "*"
       }
     ]
   })
