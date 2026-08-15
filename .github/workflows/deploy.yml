@@ -1,0 +1,54 @@
+name: ECS Api, Dashboard and Worker
+on:
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+env:
+  AWS_REGION: eu-north-1
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: ecs-deploy
+
+      - name: Deploy API via CodeDeploy
+        run: |
+          API_ARN=$(aws ecs describe-task-definition \
+            --task-definition ecs2-api \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+          aws deploy create-deployment \
+            --application-name ecs2-api \
+            --deployment-group-name ecs2-api-dg \
+            --region ${{ env.AWS_REGION }} \
+            --revision '{"revisionType":"AppSpecContent","appSpecContent":{"content":"{\"version\":1,\"Resources\":[{\"TargetService\":{\"Type\":\"AWS::ECS::Service\",\"Properties\":{\"TaskDefinition\":\"'"$API_ARN"'\",\"LoadBalancerInfo\":{\"ContainerName\":\"api\",\"ContainerPort\":8080}}}}]}"}}'
+
+      - name: Deploy Dashboard via CodeDeploy
+        run: |
+          DASH_ARN=$(aws ecs describe-task-definition \
+            --task-definition ecs2-dashboard \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+          aws deploy create-deployment \
+            --application-name ecs2-dashboard \
+            --deployment-group-name ecs2-dashboard-dg \
+            --region ${{ env.AWS_REGION }} \
+            --revision '{"revisionType":"AppSpecContent","appSpecContent":{"content":"{\"version\":1,\"Resources\":[{\"TargetService\":{\"Type\":\"AWS::ECS::Service\",\"Properties\":{\"TaskDefinition\":\"'"$DASH_ARN"'\",\"LoadBalancerInfo\":{\"ContainerName\":\"dashboard\",\"ContainerPort\":8081}}}}]}"}}'
+
+      - name: Deploy Worker via ECS
+        run: |
+          WORKER_ARN=$(aws ecs describe-task-definition \
+            --task-definition ecs2-worker \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+          aws ecs update-service \
+            --cluster ecs2-cluster \
+            --service ecs2-worker \
+            --task-definition $WORKER_ARN \
+            --region ${{ env.AWS_REGION }}
