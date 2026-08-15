@@ -2,6 +2,10 @@ name: Docker Build and Push
 on:
   push:
     branches: [main]
+    paths:
+      - 'app/**'
+      - 'services/dashboard/**'
+      - 'services/worker/**'
   workflow_dispatch:
 permissions:
   id-token: write
@@ -47,7 +51,7 @@ jobs:
           IMAGE="${{ steps.ecr.outputs.registry }}/ecs2-api"
           docker push "$IMAGE:${{ github.sha }}"
 
-  # --- Dashboard ---
+      # --- Dashboard ---
       - name: Build Dashboard image
         run: |
           IMAGE="${{ steps.ecr.outputs.registry }}/ecs2-dashboard"
