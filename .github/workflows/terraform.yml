@@ -39,3 +39,72 @@ jobs:
 
       - name: Run TFLint
         if: matrix.scanner == 'tflint'
+        continue-on-error: true
+        run: |
+          tflint --init
+          tflint --recursive
+
+      - name: Run Checkov
+        if: matrix.scanner == 'checkov'
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: terraform/
+          framework: terraform
+          output_format: sarif
+          output_file_path: checkov-results.sarif
+          soft_fail: true
+
+      - name: Upload Checkov results
+        if: matrix.scanner == 'checkov' && always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: checkov-results.sarif
+
+  terraform:
+    name: Terraform
+    needs: scan
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    env:
+      AWS_REGION: eu-north-1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate confirmation
+        run: |
+          if [ "${{ inputs.confirm }}" != "CONFIRM" ]; then
+            echo "Must type CONFIRM to proceed"
+            exit 1
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.5
+
+      - name: Terraform init
+        run: terraform init -reconfigure
+
+      - name: Terraform plan
+        run: |
+          if [ "${{ inputs.action }}" = "destroy" ]; then
+            terraform plan -destroy -out=tfplan
+          else
+            terraform plan -out=tfplan
+          fi
+
+      - name: Terraform apply
+        run: terraform apply -auto-approve tfplan
+
+      - name: Show outputs
+        if: inputs.action == 'apply'
+        run: terraform output
