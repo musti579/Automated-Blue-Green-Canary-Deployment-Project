@@ -36,25 +36,22 @@ jobs:
       - name: Build image
         run: |
           docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} ./app --platform linux/amd64
-      - name: Scan with Grype
-        id: grype-scan
-        uses: anchore/scan-action@v4
-        with:
-          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
-          fail-build: false
-          severity-cutoff: critical
-          output-format: sarif
+      - name: Install Grype
+        run: curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
 
-      - name: Debug SARIF output
+      - name: Update vulnerability database
+        run: grype db update
+
+      - name: Scan with Grype
         run: |
-          echo "SARIF path from action: ${{ steps.grype-scan.outputs.sarif }}"
-          cat ${{ steps.grype-scan.outputs.sarif }} || echo "FILE NOT FOUND OR EMPTY"
+          grype ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} \
+            -o sarif --file results.sarif --fail-on critical || true
 
       - name: Upload scan results
         if: always()
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: ${{ steps.grype-scan.outputs.sarif }}
+          sarif_file: results.sarif
 
       - name: Push to ECR
         run: |
