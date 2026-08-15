@@ -70,9 +70,9 @@ resource "aws_iam_role_policy" "github_actions" {
         Resource = "*"
       },
       {
-        # Lets the pipeline register a new task definition revision after building a new image
+        # Lets the pipeline register a new task definition revision, and update worker's service directly
         Effect   = "Allow"
-        Action   = ["ecs:RegisterTaskDefinition", "ecs:DescribeTaskDefinition"]
+        Action   = ["ecs:RegisterTaskDefinition", "ecs:DescribeTaskDefinition", "ecs:UpdateService"]
         Resource = "*"
       },
       {
@@ -81,7 +81,7 @@ resource "aws_iam_role_policy" "github_actions" {
         Action = [
           "codedeploy:CreateDeployment", "codedeploy:GetDeployment",
           "codedeploy:GetDeploymentGroup", "codedeploy:GetApplication",
-          "codedeploy:RegisterApplicationRevision"
+          "codedeploy:GetDeploymentConfig", "codedeploy:RegisterApplicationRevision"
         ]
         Resource = "*"
       },
