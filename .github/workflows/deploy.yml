@@ -2,14 +2,8 @@ name: Deploy to ECS
 on:
   workflow_dispatch:
     inputs:
-      api_image_tag:
-        description: 'API image tag to deploy (commit SHA)'
-        required: true
-      dashboard_image_tag:
-        description: 'Dashboard image tag to deploy (commit SHA)'
-        required: true
-      worker_image_tag:
-        description: 'Worker image tag to deploy (commit SHA)'
+      image_tag:
+        description: 'Image tag to deploy (commit SHA from build pipeline)'
         required: true
 permissions:
   id-token: write
