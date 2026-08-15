@@ -95,6 +95,40 @@ resource "aws_iam_role_policy" "github_actions" {
   })
 }
 
+#  permissions needed for the Terraform pipeline to apply/destroy the full project
+resource "aws_iam_role_policy" "terraform_pipeline" {
+  name = "terraform-pipeline-policy"
+  role = aws_iam_role.github_actions.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "TerraformProjectAccess"
+        Effect = "Allow"
+        Action = [
+          "s3:*",
+          "ec2:*",
+          "rds:*",
+          "elasticache:*",
+          "sqs:*",
+          "ecr:*",
+          "ecs:*",
+          "elasticloadbalancing:*",
+          "wafv2:*",
+          "codedeploy:*",
+          "route53:*",
+          "acm:*",
+          "cloudfront:*",
+          "iam:*",
+          "logs:*"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 # Exposes the role's ARN so it can be added as a GitHub repo secret (AWS_ROLE_ARN)
 output "role_arn" {
   value = aws_iam_role.github_actions.arn
