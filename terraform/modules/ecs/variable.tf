@@ -6,7 +6,7 @@ variable "sqs_queue_arn" {
   type = string
 }
 
-variable "api_image_url" {
+variable "api_container_image" {
   type = string
 }
 
@@ -18,11 +18,11 @@ variable "sqs_queue_url" {
   type = string
 }
 
-variable "worker_image_url" {
+variable "worker_container_image" {
   type = string
 }
 
-variable "dashboard_image_url" {
+variable "dashboard_container_image" {
   type = string
 }
 

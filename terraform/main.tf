@@ -44,18 +44,18 @@ module "ecr" {
 }
 
 module "ecs" {
-  source        = "./modules/ecs"
-  db_secret_arn = module.rds.db_secret_arn
-  sqs_queue_arn = module.sqs.queue_arn
-  api_image_url = module.ecr.api_repository_url
-  redis_url     = module.elasticache.redis_endpoint
-  sqs_queue_url = module.sqs.queue_url
-  worker_image_url = module.ecr.worker_repository_url
-  dashboard_image_url = module.ecr.dashboard_repository_url
-  api_blue_tg_arn = module.alb.api_blue_tg_arn 
-  dashboard_blue_tg_arn = module.alb.dashboard_blue_tg_arn
-  ecs_sg_id = module.alb.ecs_sg_id
-  private_subnet_ids = module.vpc.private_subnet_ids
+  source                     = "./modules/ecs"
+  db_secret_arn              = module.rds.db_secret_arn
+  sqs_queue_arn               = module.sqs.queue_arn
+  api_container_image         = module.ecr.api_repository_url
+  redis_url                   = module.elasticache.redis_endpoint
+  sqs_queue_url                = module.sqs.queue_url
+  worker_container_image      = module.ecr.worker_repository_url
+  dashboard_container_image   = module.ecr.dashboard_repository_url
+  api_blue_tg_arn              = module.alb.api_blue_tg_arn
+  dashboard_blue_tg_arn        = module.alb.dashboard_blue_tg_arn
+  ecs_sg_id                    = module.alb.ecs_sg_id
+  private_subnet_ids           = module.vpc.private_subnet_ids
 }
 
 module "alb" {

@@ -2,8 +2,14 @@ name: Deploy to ECS
 on:
   workflow_dispatch:
     inputs:
-      image_tag:
-        description: 'Image tag to deploy (commit SHA from build pipeline)'
+      api_image_tag:
+        description: 'API image tag to deploy (commit SHA)'
+        required: true
+      dashboard_image_tag:
+        description: 'Dashboard image tag to deploy (commit SHA)'
+        required: true
+      worker_image_tag:
+        description: 'Worker image tag to deploy (commit SHA)'
         required: true
 permissions:
   id-token: write
@@ -36,7 +42,7 @@ jobs:
         with:
           task-definition: api-task-def.json
           container-name: api
-          image: ${{ steps.ecr.outputs.registry }}/ecs2-api:${{ github.event.inputs.image_tag }}
+          image: ${{ steps.ecr.outputs.registry }}/ecs2-api:${{ github.event.inputs.api_image_tag }}
       - name: Register new API task definition
         id: register-api
         run: |
@@ -63,7 +69,7 @@ jobs:
         with:
           task-definition: dashboard-task-def.json
           container-name: dashboard
-          image: ${{ steps.ecr.outputs.registry }}/ecs2-dashboard:${{ github.event.inputs.image_tag }}
+          image: ${{ steps.ecr.outputs.registry }}/ecs2-dashboard:${{ github.event.inputs.dashboard_image_tag }}
       - name: Register new Dashboard task definition
         id: register-dashboard
         run: |
@@ -75,33 +81,3 @@ jobs:
         run: |
           aws deploy create-deployment \
             --application-name ecs2-dashboard \
-            --deployment-group-name ecs2-dashboard-dg \
-            --region ${{ env.AWS_REGION }} \
-            --revision '{"revisionType":"AppSpecContent","appSpecContent":{"content":"{\"version\":1,\"Resources\":[{\"TargetService\":{\"Type\":\"AWS::ECS::Service\",\"Properties\":{\"TaskDefinition\":\"'"${{ steps.register-dashboard.outputs.arn }}"'\",\"LoadBalancerInfo\":{\"ContainerName\":\"dashboard\",\"ContainerPort\":8081}}}}]}"}}'
-
-      # ---------------- Worker ----------------
-      - name: Get current Worker task definition
-        run: |
-          aws ecs describe-task-definition --task-definition ecs2-worker \
-            --query taskDefinition --region ${{ env.AWS_REGION }} > worker-task-def.json
-      - name: Render new Worker task definition
-        id: render-worker
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: worker-task-def.json
-          container-name: worker
-          image: ${{ steps.ecr.outputs.registry }}/ecs2-worker:${{ github.event.inputs.image_tag }}
-      - name: Register new Worker task definition
-        id: register-worker
-        run: |
-          ARN=$(aws ecs register-task-definition \
-            --cli-input-json file://${{ steps.render-worker.outputs.task-definition }} \
-            --region ${{ env.AWS_REGION }} --query taskDefinition.taskDefinitionArn --output text)
-          echo "arn=$ARN" >> $GITHUB_OUTPUT
-      - name: Deploy Worker via ECS
-        run: |
-          aws ecs update-service \
-            --cluster ecs2-cluster \
-            --service ecs2-worker \
-            --task-definition ${{ steps.register-worker.outputs.arn }} \
-            --region ${{ env.AWS_REGION }}
