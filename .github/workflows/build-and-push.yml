@@ -1,58 +1,81 @@
-name: Build and Push to ECR
+name: Docker Build and Push
 on:
-  workflow_dispatch:
   push:
     branches: [main]
-    paths: ['app/**']
+  workflow_dispatch:
 permissions:
   id-token: write
   contents: read
   security-events: write
+env:
+  AWS_REGION: eu-north-1
 jobs:
   build-and-push:
-    name: Build and Push
     runs-on: ubuntu-latest
-    env:
-      ECR_REPOSITORY: ecs2-api
-      AWS_REGION: eu-north-1
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set image tag
-        run: echo "IMAGE_TAG=${GITHUB_SHA:0:7}" >> $GITHUB_ENV
-
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials with OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to ECR
-        id: login-ecr
+        id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build image
-        run: |
-          docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} ./app --platform linux/amd64
       - name: Install Grype
         run: curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
 
       - name: Update vulnerability database
         run: grype db update
 
-      - name: Scan with Grype
+      # --- API ---
+      - name: Build API image
         run: |
-          grype ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} \
-            -o sarif --file results.sarif --fail-on critical || true
+          IMAGE="${{ steps.ecr.outputs.registry }}/ecs2-api"
+          docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" ./app --platform linux/amd64
 
-      - name: Upload scan results
-        if: always()
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: results.sarif
-
-      - name: Push to ECR
+      - name: Scan API image
         run: |
-          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          grype "${{ steps.ecr.outputs.registry }}/ecs2-api:${{ github.sha }}" --fail-on critical || true
+
+      - name: Push API image
+        run: |
+          IMAGE="${{ steps.ecr.outputs.registry }}/ecs2-api"
+          docker push "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:latest"
+
+      # --- Dashboard ---
+      - name: Build Dashboard image
+        run: |
+          IMAGE="${{ steps.ecr.outputs.registry }}/ecs2-dashboard"
+          docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" ./services/dashboard --platform linux/amd64
+
+      - name: Scan Dashboard image
+        run: |
+          grype "${{ steps.ecr.outputs.registry }}/ecs2-dashboard:${{ github.sha }}" --fail-on critical || true
+
+      - name: Push Dashboard image
+        run: |
+          IMAGE="${{ steps.ecr.outputs.registry }}/ecs2-dashboard"
+          docker push "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:latest"
+
+      # --- Worker ---
+      - name: Build Worker image
+        run: |
+          IMAGE="${{ steps.ecr.outputs.registry }}/ecs2-worker"
+          docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" ./services/worker --platform linux/amd64
+
+      - name: Scan Worker image
+        run: |
+          grype "${{ steps.ecr.outputs.registry }}/ecs2-worker:${{ github.sha }}" --fail-on critical || true
+
+      - name: Push Worker image
+        run: |
+          IMAGE="${{ steps.ecr.outputs.registry }}/ecs2-worker"
+          docker push "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:latest"
