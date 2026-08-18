@@ -194,7 +194,7 @@ resource "aws_lb_listener" "api_listener_https" {
 
 # listener rule given listens to any of the condition if meet then traffic is sent to dashboard blue
 resource "aws_lb_listener_rule" "dashboard_listener" {
-  listener_arn = aws_lb_listener.api_listener.arn
+  listener_arn = aws_lb_listener.api_listener_https.arn
   priority     = 100
 
   action {

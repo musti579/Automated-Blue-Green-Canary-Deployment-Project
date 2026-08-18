@@ -31,16 +31,14 @@ variable "ecs_sg_id" {
   type = string
 }
 
-variable "image_tag" {
-  type        = string
+variable "api_image" {
+  type = string
 }
 
-variable "api_repo_url" {
+variable "dashboard_image" {
   type = string
 }
-variable "worker_repo_url" {
-  type = string
-}
-variable "dashboard_repo_url" {
+
+variable "worker_image" {
   type = string
 }

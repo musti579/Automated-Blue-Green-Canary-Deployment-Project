@@ -34,7 +34,6 @@ resource "aws_cloudwatch_log_group" "cloudwatch_dashboard_logs" {
   }
 }
 
-
 resource "aws_iam_role" "execution" {
   name = "ecs2-task-execution-role"
 
@@ -70,12 +69,10 @@ resource "aws_iam_role_policy" "execution_secrets" {
   })
 }
 
-
 resource "aws_iam_role_policy_attachment" "execution_managed" {
   role       = aws_iam_role.execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
-
 
 resource "aws_iam_role" "api_task" {
   name = "ecs2-api-task-role"
@@ -96,7 +93,6 @@ resource "aws_iam_role" "api_task" {
   }
 }
 
-
 resource "aws_iam_role_policy" "api_sqs" {
   name = "ecs2-api-sqs"
   role = aws_iam_role.api_task.id
@@ -110,7 +106,6 @@ resource "aws_iam_role_policy" "api_sqs" {
     }]
   })
 }
-
 
 resource "aws_iam_role" "worker_task" {
   name = "ecs2-worker-task-role"
@@ -149,7 +144,6 @@ resource "aws_iam_role_policy" "worker_sqs" {
   })
 }
 
-
 resource "aws_ecs_task_definition" "api" {
   family                   = "ecs2-api"
   requires_compatibilities = ["FARGATE"]
@@ -168,7 +162,7 @@ resource "aws_ecs_task_definition" "api" {
     {
       name      = "api"
       # api task definition
-      image = "${var.api_repo_url}:${var.image_tag}"
+      image     = var.api_image
       essential = true
       portMappings = [
         { containerPort = 8080, protocol = "tcp" }
@@ -178,9 +172,9 @@ resource "aws_ecs_task_definition" "api" {
         { name = "SQS_QUEUE_URL", value = var.sqs_queue_url },
         { name = "PORT",          value = "8080" }
       ]
-            secrets = [
-    { name = "DATABASE_URL", valueFrom = var.db_secret_arn }    
-        ]
+      secrets = [
+        { name = "DATABASE_URL", valueFrom = var.db_secret_arn }
+      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -202,24 +196,23 @@ resource "aws_ecs_task_definition" "worker" {
   execution_role_arn       = aws_iam_role.execution.arn
   task_role_arn            = aws_iam_role.worker_task.arn
 
-
   runtime_platform {
     operating_system_family = "LINUX"
     cpu_architecture        = "X86_64"
   }
- container_definitions = jsonencode([
+
+  container_definitions = jsonencode([
     {
       name      = "worker"
       # worker task definition
-      image = "${var.worker_repo_url}:${var.image_tag}"
+      image     = var.worker_image
       essential = true
-    
       environment = [
         { name = "SQS_QUEUE_URL", value = var.sqs_queue_url },
       ]
-            secrets = [
-    { name = "DATABASE_URL", valueFrom = var.db_secret_arn }    
-        ]
+      secrets = [
+        { name = "DATABASE_URL", valueFrom = var.db_secret_arn }
+      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -230,9 +223,7 @@ resource "aws_ecs_task_definition" "worker" {
       }
     }
   ])
-
 }
-
 
 resource "aws_ecs_task_definition" "dashboard" {
   family                   = "ecs2-dashboard"
@@ -246,21 +237,22 @@ resource "aws_ecs_task_definition" "dashboard" {
     operating_system_family = "LINUX"
     cpu_architecture        = "X86_64"
   }
- container_definitions = jsonencode([
+
+  container_definitions = jsonencode([
     {
       name      = "dashboard"
       # dashboard task definition
-      image = "${var.dashboard_repo_url}:${var.image_tag}"
+      image     = var.dashboard_image
       essential = true
       portMappings = [
         { containerPort = 8081, protocol = "tcp" }
       ]
-       environment = [
-        { name = "PORT",          value = "8081" }
+      environment = [
+        { name = "PORT", value = "8081" }
       ]
-            secrets = [
-    { name = "DATABASE_URL", valueFrom = var.db_secret_arn }    
-        ]
+      secrets = [
+        { name = "DATABASE_URL", valueFrom = var.db_secret_arn }
+      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {

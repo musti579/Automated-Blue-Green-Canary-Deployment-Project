@@ -18,6 +18,8 @@ variable "azs" {
   default = ["eu-north-1a", "eu-north-1b"]
 }
 
-variable "image_tag"{
-  type = string
+variable "container_image_tag" {
+  description = "Initial image tag used by Terraform. CI/CD should deploy immutable SHA tags after initial setup."
+  type        = string
+  default     = "latest"
 }

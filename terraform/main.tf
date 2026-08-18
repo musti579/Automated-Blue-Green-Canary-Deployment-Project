@@ -53,10 +53,9 @@ module "ecs" {
   dashboard_blue_tg_arn        = module.alb.dashboard_blue_tg_arn
   ecs_sg_id                    = module.alb.ecs_sg_id
   private_subnet_ids           = module.vpc.private_subnet_ids
-api_repo_url                   = module.ecr.api_repository_url
-  worker_repo_url              = module.ecr.worker_repository_url
-  dashboard_repo_url           = module.ecr.dashboard_repository_url
-  image_tag                    = var.image_tag
+  api_image       = "${module.ecr.api_repository_url}:${var.container_image_tag}"
+  dashboard_image = "${module.ecr.dashboard_repository_url}:${var.container_image_tag}"
+  worker_image    = "${module.ecr.worker_repository_url}:${var.container_image_tag}"
 }
 
 module "alb" {
