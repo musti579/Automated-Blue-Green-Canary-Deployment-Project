@@ -96,7 +96,7 @@ jobs:
 
       - name: Deploy Dashboard via CodeDeploy
         run: |
-          aws deploy create-deployment --application-name ecs2-dashboard --deployment-group-name ecs2-dashboard-dg --region ${{ env.AWS_REGION }} --revision '{"revisionType":"AppSpecContent","appSpecContent":{"content":"{\"version\":1,\"Resources\":[{\"TargetService\":{\"Type\":\"AWS::ECS::Service\",\"Properties\":{\"TaskDefinition\":\"'"${{ steps.register-dashboard.outputs.arn }}"'\",\"LoadBalancerInfo\":{\"ContainerName\":\"dashboard\",\"ContainerPort\":8081}}}}]}"}}'
+          aws deploy create-deployment --application-name url-shortener-codedeploy-app --deployment-group-name url-shortener-codedeploy-app-dg --region ${{ env.AWS_REGION }} --revision '{"revisionType":"AppSpecContent","appSpecContent":{"content":"{\"version\":1,\"Resources\":[{\"TargetService\":{\"Type\":\"AWS::ECS::Service\",\"Properties\":{\"TaskDefinition\":\"'"${{ steps.register-dashboard.outputs.arn }}"'\",\"LoadBalancerInfo\":{\"ContainerName\":\"dashboard\",\"ContainerPort\":8081}}}}]}"}}'
 
       # ---------------- Worker ----------------
       - name: Get current Worker task definition

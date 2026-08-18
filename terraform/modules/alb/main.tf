@@ -192,6 +192,7 @@ resource "aws_lb_listener" "api_listener_https" {
 }
 
 
+
 # listener rule given listens to any of the condition if meet then traffic is sent to dashboard blue
 resource "aws_lb_listener_rule" "dashboard_listener" {
   listener_arn = aws_lb_listener.api_listener_https.arn
@@ -206,6 +207,10 @@ resource "aws_lb_listener_rule" "dashboard_listener" {
     path_pattern {
       values = ["/summary", "/url/*", "/recent", "/top"]
     }
+  }
+
+  lifecycle {
+    ignore_changes = [action]
   }
 }
 
