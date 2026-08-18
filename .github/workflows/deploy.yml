@@ -1,10 +1,6 @@
 name: Deploy to ECS
 on:
   workflow_dispatch:
-    inputs:
-      image_tag:
-        description: 'Image tag to deploy (commit SHA from build pipeline)'
-        required: true
 permissions:
   id-token: write
   contents: read
@@ -25,6 +21,37 @@ jobs:
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      # ---------------- Resolve latest pushed tag per service ----------------
+      - name: Get latest API image tag
+        id: api-tag
+        run: |
+          TAG=$(aws ecr describe-images --repository-name ecs2-api --region ${{ env.AWS_REGION }} --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' --output text)
+          if [ -z "$TAG" ] || [ "$TAG" = "None" ]; then
+            echo "No deployable image tag found in ecs2-api"
+            exit 1
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Get latest Dashboard image tag
+        id: dashboard-tag
+        run: |
+          TAG=$(aws ecr describe-images --repository-name ecs2-dashboard --region ${{ env.AWS_REGION }} --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' --output text)
+          if [ -z "$TAG" ] || [ "$TAG" = "None" ]; then
+            echo "No deployable image tag found in ecs2-dashboard"
+            exit 1
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Get latest Worker image tag
+        id: worker-tag
+        run: |
+          TAG=$(aws ecr describe-images --repository-name ecs2-worker --region ${{ env.AWS_REGION }} --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' --output text)
+          if [ -z "$TAG" ] || [ "$TAG" = "None" ]; then
+            echo "No deployable image tag found in ecs2-worker"
+            exit 1
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
       # ---------------- API ----------------
       - name: Get current API task definition
         run: |
@@ -36,7 +63,7 @@ jobs:
         with:
           task-definition: api-task-def.json
           container-name: api
-          image: ${{ steps.ecr.outputs.registry }}/ecs2-api:${{ github.event.inputs.api_image_tag }}
+          image: ${{ steps.ecr.outputs.registry }}/ecs2-api:${{ steps.api-tag.outputs.tag }}
 
       - name: Register new API task definition
         id: register-api
@@ -59,7 +86,7 @@ jobs:
         with:
           task-definition: dashboard-task-def.json
           container-name: dashboard
-          image: ${{ steps.ecr.outputs.registry }}/ecs2-dashboard:${{ github.event.inputs.dashboard_image_tag }}
+          image: ${{ steps.ecr.outputs.registry }}/ecs2-dashboard:${{ steps.dashboard-tag.outputs.tag }}
 
       - name: Register new Dashboard task definition
         id: register-dashboard
@@ -82,7 +109,7 @@ jobs:
         with:
           task-definition: worker-task-def.json
           container-name: worker
-          image: ${{ steps.ecr.outputs.registry }}/ecs2-worker:${{ github.event.inputs.worker_image_tag }}
+          image: ${{ steps.ecr.outputs.registry }}/ecs2-worker:${{ steps.worker-tag.outputs.tag }}
 
       - name: Register new Worker task definition
         id: register-worker
@@ -92,4 +119,4 @@ jobs:
 
       - name: Deploy Worker via ECS
         run: |
-          aws ecs update-service --cluster ecs2-cluster --service ecs2-worker --task-definition ${{ steps.register-worker.outputs.arn }} --region ${{ env.AWS_REGION }}
+          aws ecs update-service --cluster ecs2-cluster --service ecs2-worker --task-definition ${{ steps.register-worker.outputs.arn }}

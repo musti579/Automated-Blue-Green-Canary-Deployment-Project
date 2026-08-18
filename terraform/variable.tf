@@ -17,3 +17,7 @@ variable "azs" {
   type    = list(string)
   default = ["eu-north-1a", "eu-north-1b"]
 }
+
+variable "image_tag"{
+  type = string
+}

@@ -167,7 +167,8 @@ resource "aws_ecs_task_definition" "api" {
   container_definitions = jsonencode([
     {
       name      = "api"
-      image     = var.api_container_image
+      # api task definition
+      image = "${var.api_repo_url}:${var.image_tag}"
       essential = true
       portMappings = [
         { containerPort = 8080, protocol = "tcp" }
@@ -209,7 +210,8 @@ resource "aws_ecs_task_definition" "worker" {
  container_definitions = jsonencode([
     {
       name      = "worker"
-      image     = var.worker_container_image
+      # worker task definition
+      image = "${var.worker_repo_url}:${var.image_tag}"
       essential = true
     
       environment = [
@@ -247,7 +249,8 @@ resource "aws_ecs_task_definition" "dashboard" {
  container_definitions = jsonencode([
     {
       name      = "dashboard"
-      image     = var.dashboard_container_image
+      # dashboard task definition
+      image = "${var.dashboard_repo_url}:${var.image_tag}"
       essential = true
       portMappings = [
         { containerPort = 8081, protocol = "tcp" }
