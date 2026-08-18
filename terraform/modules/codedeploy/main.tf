@@ -31,7 +31,7 @@ resource "aws_codedeploy_app" "api" {
 
 resource "aws_codedeploy_app" "dashboard" {
   compute_platform = "ECS"
-  name             = "ecs2-dashboard"
+  name             = "url-shortener-codedeploy-app"
 }
 
 resource "aws_codedeploy_deployment_group" "api" {
@@ -86,7 +86,7 @@ resource "aws_codedeploy_deployment_group" "api" {
 resource "aws_codedeploy_deployment_group" "dashboard" {
   app_name               = aws_codedeploy_app.dashboard.name
   deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
-  deployment_group_name  = "ecs2-dashboard-dg"
+  deployment_group_name  = "url-shortener-codedeploy-app-dg"
   service_role_arn       = aws_iam_role.codedeploy.arn
 
   auto_rollback_configuration {
