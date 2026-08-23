@@ -11,9 +11,7 @@ This is a production-style platform for a FastAPI URL shortener on AWS. Infrastr
 
 # Live Demo 
 
-![LiveDemo](images/LiveDemo.png)
-
-Production URL shortener running on ECS Fargate with HTTPS and WAF protection.
+![LiveDemo](images/LiveDemo.png) Production URL shortener running on ECS Fargate with HTTPS and WAF protection.
 
 
 # Repository Structure
@@ -51,3 +49,11 @@ Automated-Blue-Green-Deployment/
 ├── docker-compose.yml
 ├── README.md
 ```
+
+# Network Componenets
+
+
+
+
+
+# GitHub OIDC trust setup

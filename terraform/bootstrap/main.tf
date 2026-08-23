@@ -43,7 +43,7 @@ resource "aws_iam_role" "github_actions" {
           }
           # Restricts which repo is allowed to assume this role
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:musti579/ecsv2:*"
+            "token.actions.githubusercontent.com:sub" = "repo:musti579/Automated-Blue-Green-Deployment-Project:*"
           }
         }
       }
