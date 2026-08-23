@@ -5,8 +5,8 @@ This is a production-style platform for a FastAPI URL shortener on AWS. Infrastr
 
 # Architecture
 
-![Architecture Diagram](images/architecture.gif)
 
+![LiveDemo](images/Architecture.gif)
 
 
 # Live Demo 
