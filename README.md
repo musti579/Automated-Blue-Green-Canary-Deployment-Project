@@ -3,6 +3,21 @@
 This is a production-style platform for a FastAPI URL shortener on AWS. Infrastructure is managed with Terraform, and delivery is keyless through GitHub OIDC. Releases use CodeDeploy blue-green deployments to ECS Fargate behind an ALB. The ALB terminates TLS through ACM and is protected by WAF. The platform runs three independent services an API, a background worker, and a dashboard backed by RDS, ElastiCache, and SQS, with a static frontend served through CloudFront.
 
 
+
+# Project Overview
+
+AWS ECS Fargate serverless, scalable compute hosting three services: API, background worker, and dashboard
+Networking — custom VPC across two Availability Zones, public/private subnets, route tables, security groups, ALB
+AWS WAF — filters web requests in front of the ALB for enhanced security
+VPC Endpoints — cost-efficient private access to ECR, SQS, S3, and CloudWatch, eliminating the need for a NAT gateway
+PostgreSQL (RDS) — stores URL mappings and click analytics
+ElastiCache (Redis) — in-memory cache in front of RDS on the redirect path
+SQS — decouples click events between the API and worker
+TLS/DNS — SSL certificates via ACM, DNS via Route 53, fully automated
+CodeDeploy — blue-green deployments to ECS Fargate for the API and dashboard
+GitHub Actions — CI/CD pipelines to build/scan/push images and deploy Terraform-provisioned infrastructure, authenticated via OIDC
+Infrastructure as Code (Terraform) — manages all infrastructure, fully automated
+
 # Architecture
 
 
@@ -58,11 +73,4 @@ Automated-Blue-Green-Deployment/
 
 # GitHub OIDC trust setup
 
-<<<<<<< HEAD
 ![GitubOIDC](images/OIDC.png)
-=======
-
-
-
-# GitHub OIDC trust setup
->>>>>>> 2e75163a143d0d82ea452702dab5f491fe833b06
