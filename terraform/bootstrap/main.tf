@@ -109,6 +109,7 @@ resource "aws_iam_role_policy" "terraform_pipeline" {
         Action = [
           "s3:*",
           "ec2:*",
+          "rds:*",
           "elasticache:*",
           "sqs:*",
           "ecr:*",

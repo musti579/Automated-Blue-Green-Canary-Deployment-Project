@@ -51,9 +51,11 @@ Automated-Blue-Green-Deployment/
 ```
 
 # Network Componenets
-
-
-
-
+![ResourceMap](images/AlbResourceMap.png)
+![Endpoints](images/Endpoints.png)
+![WAF_Rule](images/WAF_Rule.png)
+![WAF](images/WAF.png)
 
 # GitHub OIDC trust setup
+
+![GitubOIDC](images/OIDC.png)
