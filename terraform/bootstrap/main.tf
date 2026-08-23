@@ -43,7 +43,7 @@ resource "aws_iam_role" "github_actions" {
           }
           # Restricts which repo is allowed to assume this role
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:musti579/Automated-Blue-Green-Deployment-Project:*"
+            "token.actions.githubusercontent.com:sub" = "repo:musti579@*/Automated-Blue-Green-Deployment-Project@*:*"
           }
         }
       }
@@ -109,7 +109,6 @@ resource "aws_iam_role_policy" "terraform_pipeline" {
         Action = [
           "s3:*",
           "ec2:*",
-          "rds:*",
           "elasticache:*",
           "sqs:*",
           "ecr:*",
