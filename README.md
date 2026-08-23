@@ -5,8 +5,8 @@ This is a production-style platform for a FastAPI URL shortener on AWS. Infrastr
 
 # Architecture
 
-![Architecture Diagram](images/architecture.gif)
 
+![LiveDemo](images/Architecture.gif)
 
 
 # Live Demo 
@@ -58,4 +58,11 @@ Automated-Blue-Green-Deployment/
 
 # GitHub OIDC trust setup
 
+<<<<<<< HEAD
 ![GitubOIDC](images/OIDC.png)
+=======
+
+
+
+# GitHub OIDC trust setup
+>>>>>>> 2e75163a143d0d82ea452702dab5f491fe833b06
