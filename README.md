@@ -4,4 +4,11 @@ This is a production-style platform for a FastAPI URL shortener on AWS. Infrastr
 
 # Architecture
 
-![Architecture Diagram](images/architecture.png)
+
+
+
+# Live Demo 
+
+![LiveDemo](images/LiveDemo.png)
+
+
