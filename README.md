@@ -4,19 +4,19 @@ This is a production-style platform for a FastAPI URL shortener on AWS. Infrastr
 
 
 
-# Project Overview
+## Project Overview
 
-AWS ECS Fargate serverless, scalable compute hosting three services: API, background worker, and dashboard
-Networking — custom VPC across two Availability Zones, public/private subnets, route tables, security groups, ALB
-AWS WAF — filters web requests in front of the ALB for enhanced security
-VPC Endpoints — cost-efficient private access to ECR, SQS, S3, and CloudWatch, eliminating the need for a NAT gateway
-PostgreSQL (RDS) — stores URL mappings and click analytics
-ElastiCache (Redis) — in-memory cache in front of RDS on the redirect path
-SQS — decouples click events between the API and worker
-TLS/DNS — SSL certificates via ACM, DNS via Route 53, fully automated
-CodeDeploy — blue-green deployments to ECS Fargate for the API and dashboard
-GitHub Actions — CI/CD pipelines to build/scan/push images and deploy Terraform-provisioned infrastructure, authenticated via OIDC
-Infrastructure as Code (Terraform) — manages all infrastructure, fully automated
+- **AWS ECS Fargate** — serverless, scalable compute hosting three services: API, background worker, and dashboard
+- **Networking** — custom VPC across two Availability Zones, public/private subnets, route tables, security groups, ALB
+- **AWS WAF** — filters web requests in front of the ALB for enhanced security
+- **VPC Endpoints** — cost-efficient private access to ECR, SQS, S3, and CloudWatch, eliminating the need for a NAT gateway
+- **PostgreSQL (RDS)** — stores URL mappings and click analytics
+- **ElastiCache (Redis)** — in-memory cache in front of RDS on the redirect path
+- **SQS** — decouples click events between the API and worker
+- **TLS/DNS** — SSL certificates via ACM, DNS via Route 53, fully automated
+- **CodeDeploy** — blue-green deployments to ECS Fargate for the API and dashboard
+- **GitHub Actions** — CI/CD pipelines to build/scan/push images and deploy Terraform-provisioned infrastructure, authenticated via OIDC
+- **Infrastructure as Code (Terraform)** — manages all infrastructure, fully automated
 
 # Architecture
 
