@@ -68,9 +68,59 @@ Automated-Blue-Green-Deployment/
 # Network Componenets
 ![ResourceMap](images/AlbResourceMap.png)
 ![Endpoints](images/Endpoints.png)
-![WAF_Rule](images/WAF_Rule.png)
+![WAF_Rule](images/WAF_rule.png)
 ![WAF](images/WAF.png)
 
 # GitHub OIDC trust setup
 
 ![GitubOIDC](images/OIDC.png)
+
+Prerequisites
+You need an AWS account with permissions to create IAM, ECR, ECS, RDS, ElastiCache, SQS, ALB, ACM, Route 53, CloudFront, and CodeDeploy resources. You also need a public domain and a Route 53 hosted zone, so ACM can complete DNS validation and traffic can resolve to the ALB and CloudFront. Install Terraform version 1.6 or later, AWS CLI version 2, Docker, and Git. You also need GitHub repository admin access so you can set secrets and run workflows.
+
+You must define this GitHub repository secret before running pipelines:
+
+AWS_ROLE_ARN — the IAM role ARN that trusts GitHub OIDC.
+Setup steps
+Run bootstrap Terraform from bootstrap/ one time so the state bucket, OIDC provider, and GitHub Actions deploy role exist.
+Add the bootstrap role's ARN to the repository secret AWS_ROLE_ARN.
+Run the main infrastructure from terraform/ so networking, RDS, ElastiCache, SQS, ECS, ALB, WAF, CodeDeploy, and the frontend get created.
+
+```text
+cd terraform
+terraform init -reconfigure
+terraform plan
+terraform apply
+```
+
+Push changes to app/**, services/dashboard/**, or services/worker/** (or trigger build-and-push.yml manually) so the images build, scan, and push to ECR.
+Run deploy.yml it resolves the latest pushed tag per service from ECR automatically, registers new task definitions, and starts a blue-green deployment through CodeDeploy for the API and dashboard.
+
+
+# Security and Guardrails
+
+AWS WAF sits in front of the ALB, using a managed rule set to reduce exposure to common web attacks. The ALB terminates TLS with an ACM-managed certificate and redirects all HTTP traffic to HTTPS. GitHub Actions authenticates to AWS through OIDC, so no long-lived credentials are stored as repository secrets tokens are short-lived and scoped by the role's trust policy, restricted to this specific repository. IAM permissions follow least privilege: separate task roles for the API and worker, a dedicated execution role, and a scoped CodeDeploy service role each limited to what it actually needs. ECS tasks run in private subnets and accept inbound traffic only from the ALB's security group, never directly from the internet. Access to ECR, SQS, S3, and CloudWatch is routed entirely through VPC endpoints, so the platform has no NAT gateway and keeps egress cost and public exposure to a minimum.
+
+
+# Project Decisions and Tradeoffs
+
+## Infrastructure Design
+
+Module boundaries — split into VPC, ALB, ECS, RDS, ElastiCache, SQS, ECR, CodeDeploy, ACM, and frontend modules. Improves reuse, but the wiring between them is exactly where this project's outage originated.
+Bootstrap/workload separation OIDC role and state bucket live in their own bootstrap/ state, separate from terraform/. Cleaner lifecycle boundaries, two entry points to remember.
+
+## Network and Security
+
+Private subnets + VPC endpoints — no NAT gateway, lower cost and exposure, at the cost of harder network debugging.
+ALB + ACM + WAF — managed TLS and L7 filtering, more moving parts to keep in sync (a CodeDeploy-managed listener rule got silently reverted mid-project until ignore_changes was added).
+OIDC over long-lived keys short-lived, scoped credentials; trust-policy drift (repo renames, GitHub's newer sub claim format) can break it fast.
+
+## Delivery
+
+Three separate workflows (build, deploy, terraform) isolated failure domains, more manual orchestration than one pipeline.
+Commit-SHA tags, resolved automatically at deploy closes the gap that caused the original outage; Terraform's own :latest bootstrap default still needs something pushed under that tag at least once.
+CodeDeploy blue-green (single-shot, not canary) for API/dashboard, plain rolling for worker — health-checked traffic shift with auto-rollback, but requires strict target-group/listener consistency.
+CI/CD and Deployment Flow
+build-and-push.yml — builds all three service images, scans with Grype, pushes to ECR tagged with the commit SHA.
+deploy.yml resolves each service's most recently pushed tag directly from ECR (no manual input), registers new task definitions, deploys via CodeDeploy (API/dashboard) or update-service (worker).
+terraform.yml TFLint + Checkov, then plan/apply, gated behind a typed confirmation.
