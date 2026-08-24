@@ -75,7 +75,8 @@ Automated-Blue-Green-Deployment/
 
 ![GitubOIDC](images/OIDC.png)
 
-Prerequisites
+# Prerequisites
+
 You need an AWS account with permissions to create IAM, ECR, ECS, RDS, ElastiCache, SQS, ALB, ACM, Route 53, CloudFront, and CodeDeploy resources. You also need a public domain and a Route 53 hosted zone, so ACM can complete DNS validation and traffic can resolve to the ALB and CloudFront. Install Terraform version 1.6 or later, AWS CLI version 2, Docker, and Git. You also need GitHub repository admin access so you can set secrets and run workflows.
 
 You must define this GitHub repository secret before running pipelines:
