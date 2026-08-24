@@ -86,7 +86,7 @@ You must define this GitHub repository secret before running pipelines:
 ### Setup steps
 
 1. Run bootstrap Terraform from bootstrap/ one time so the state bucket, OIDC provider, and GitHub Actions deploy role exist.
-2. Add the bootstrap role's ARN to the repository secret AWS_ROLE_ARN.
+2. Add the bootstrap role's ARN to the repository secret `AWS_ROLE_ARN`.
 3. run the main infrastructure from terraform/ so networking, RDS, ElastiCache, SQS, ECS, ALB, WAF, CodeDeploy, and the frontend get created.
 
 ```bash
